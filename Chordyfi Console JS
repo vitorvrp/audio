@@ -1,0 +1,243 @@
+(function () {
+  const groupColors = ['blue', 'green', 'pink', 'orange', 'purple', 'brown', 'cyan'];
+  let groups = [];
+  let currentGroup = new Set();
+  let currentColorIndex = 0;
+
+  let isDragging = false;
+  let dragStart = { x: 0, y: 0 };
+  let selectionBox = null;
+
+  // Container alvo
+  const container = document.getElementById('chords');
+  if (!container) {
+    console.warn('[×] Container #chords não encontrado. O script pode não funcionar corretamente.');
+  }
+
+  function blockAutoScroll() {
+    window.scrollTo = () => console.log('[×] scrollTo bloqueado');
+    window.scrollBy = () => console.log('[×] scrollBy bloqueado');
+
+    const blockScrollTop = (el) => {
+      let value = 0;
+      Object.defineProperty(el, 'scrollTop', {
+        get: () => value,
+        set: (v) => {
+          console.log('[×] scrollTop bloqueado');
+          value = v;
+        },
+        configurable: true
+      });
+    };
+
+    blockScrollTop(document.documentElement);
+    blockScrollTop(document.body);
+    console.log('[✓] Scroll automático bloqueado (scroll manual permitido).');
+  }
+
+  function highlightElement(el, color) {
+    el.style.outline = `2px solid ${color}`;
+  }
+
+  function unhighlightElement(el) {
+    el.style.outline = '';
+  }
+
+  // Função que verifica se o elemento é "selecionável" — ou seja, se tem classe chord ou chord nolabel
+  function isSelectableChord(el) {
+    if (!el.classList) return false;
+    // Deve conter 'chord' (obrigatório) e pode conter ou não 'nolabel'
+    return el.classList.contains('chord');
+  }
+
+  function toggleSelection(el, withCtrl = false) {
+    if (!container.contains(el)) return;
+    if (!isSelectableChord(el)) return;
+
+    if (withCtrl) {
+      if (currentGroup.has(el)) {
+        currentGroup.delete(el);
+        unhighlightElement(el);
+      } else {
+        currentGroup.add(el);
+        highlightElement(el, 'red');
+      }
+    } else {
+      currentGroup.forEach(unhighlightElement);
+      currentGroup.clear();
+      currentGroup.add(el);
+      highlightElement(el, 'red');
+    }
+  }
+
+  function applyColorToCurrentGroup() {
+    if (currentGroup.size === 0) {
+      console.warn('[×] Nenhum elemento selecionado no grupo atual para colorir.');
+      return;
+    }
+
+    currentGroup.forEach(el => {
+      el.style.outline = '';
+    });
+
+    const color = groupColors[currentColorIndex];
+    currentGroup.forEach(el => {
+      highlightElement(el, color);
+    });
+
+    groups.push({ elements: new Set(currentGroup), color });
+    currentGroup.clear();
+
+    currentColorIndex = (currentColorIndex + 1) % groupColors.length;
+
+    console.log(`[✓] Grupo colorido com "${color}" aplicado e novo grupo iniciado.`);
+  }
+
+  function createSelectionBox() {
+    selectionBox = document.createElement('div');
+    selectionBox.style.position = 'fixed';
+    selectionBox.style.border = '2px dashed #0099ff';
+    selectionBox.style.backgroundColor = 'rgba(0, 153, 255, 0.2)';
+    selectionBox.style.pointerEvents = 'none';
+    selectionBox.style.zIndex = '9999';
+    document.body.appendChild(selectionBox);
+  }
+
+  function updateSelectionBox(x1, y1, x2, y2) {
+    const left = Math.min(x1, x2);
+    const top = Math.min(y1, y2);
+    const width = Math.abs(x2 - x1);
+    const height = Math.abs(y2 - y1);
+
+    selectionBox.style.left = left + 'px';
+    selectionBox.style.top = top + 'px';
+    selectionBox.style.width = width + 'px';
+    selectionBox.style.height = height + 'px';
+  }
+
+  function removeSelectionBox() {
+    if (selectionBox) {
+      document.body.removeChild(selectionBox);
+      selectionBox = null;
+    }
+  }
+
+  function isElementInRect(el, rect) {
+    const elRect = el.getBoundingClientRect();
+    return !(
+      elRect.right < rect.left ||
+      elRect.left > rect.right ||
+      elRect.bottom < rect.top ||
+      elRect.top > rect.bottom
+    );
+  }
+
+  function clearCurrentSelection() {
+    currentGroup.forEach(el => unhighlightElement(el));
+    currentGroup.clear();
+    console.log('[✓] Seleção atual limpa.');
+  }
+
+  document.addEventListener('mousedown', (e) => {
+    if (e.ctrlKey && e.button === 0 && container.contains(e.target) && isSelectableChord(e.target)) {
+      e.preventDefault();
+      isDragging = true;
+      dragStart.x = e.clientX;
+      dragStart.y = e.clientY;
+      createSelectionBox();
+    }
+  });
+
+  document.addEventListener('mousemove', (e) => {
+    if (!isDragging || !selectionBox) return;
+    e.preventDefault();
+
+    updateSelectionBox(dragStart.x, dragStart.y, e.clientX, e.clientY);
+
+    const rect = {
+      left: Math.min(dragStart.x, e.clientX),
+      top: Math.min(dragStart.y, e.clientY),
+      right: Math.max(dragStart.x, e.clientX),
+      bottom: Math.max(dragStart.y, e.clientY)
+    };
+
+    currentGroup.forEach(el => unhighlightElement(el));
+    currentGroup.clear();
+
+    // Seleciona só elementos com classe chord dentro do container e dentro do retângulo
+    const allElements = container.querySelectorAll('.chord');
+    allElements.forEach(el => {
+      if (isElementInRect(el, rect)) {
+        currentGroup.add(el);
+        highlightElement(el, 'red');
+      }
+    });
+  });
+
+  document.addEventListener('mouseup', (e) => {
+    if (isDragging) {
+      e.preventDefault();
+      isDragging = false;
+      removeSelectionBox();
+      console.log(`[✓] Seleção múltipla finalizada. ${currentGroup.size} elemento(s) selecionado(s).`);
+    }
+  });
+
+  document.addEventListener('click', (e) => {
+    if (e.ctrlKey && container.contains(e.target) && isSelectableChord(e.target)) {
+      e.preventDefault();
+      toggleSelection(e.target, true);
+    }
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'x') {
+      e.preventDefault();
+      clearCurrentSelection();
+    }
+
+    if (e.ctrlKey && e.key.toLowerCase() === 'm') {
+      e.preventDefault();
+      applyColorToCurrentGroup();
+    }
+
+    if (e.ctrlKey && (e.key.toLowerCase() === 'x' || e.key.toLowerCase() === 'y')) {
+      e.preventDefault();
+
+      if (currentGroup.size === 0) {
+        console.warn('[×] Nenhum elemento selecionado para ação.');
+        return;
+      }
+
+      if (e.key.toLowerCase() === 'x') {
+        currentGroup.forEach((el) => {
+          const clone = el.cloneNode(true);
+          clone.style.outline = '';
+          el.parentNode.insertBefore(clone, el.nextSibling);
+          console.log('[✓] Elemento duplicado:', clone);
+        });
+      }
+
+      if (e.key.toLowerCase() === 'y') {
+        currentGroup.forEach((el) => {
+          const fakeChord = document.createElement('div');
+          fakeChord.className = 'fake-chord';
+          el.parentNode.replaceChild(fakeChord, el);
+          console.log('[✓] Elemento substituído por <div class="fake-chord"></div>');
+        });
+        currentGroup.clear();
+      }
+    }
+  });
+
+  blockAutoScroll();
+
+  console.log(`Modo ativado:
+- Ctrl + arrastar com mouse esquerdo dentro de #chords: seleção múltipla por área (contorno vermelho) só em elementos .chord
+- Ctrl + clique esquerdo dentro de #chords em elementos .chord: selecionar/deselecionar individualmente (contorno vermelho)
+- Ctrl + M: aplicar cor do grupo atual e iniciar novo grupo (cores dos grupos: azul, verde, rosa, laranja, etc)
+- Ctrl + X: duplicar apenas os elementos selecionados
+- Ctrl + Y: substituir apenas os elementos selecionados
+- Ctrl + Shift + X: limpar/desselecionar todos os elementos selecionados
+- Scroll automático bloqueado, scroll manual permitido`);
+})();
