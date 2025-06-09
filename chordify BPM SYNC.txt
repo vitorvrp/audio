@@ -1,0 +1,78 @@
+// === Metrônomo sincronizado com acordes via Web Audio API ===
+
+// Criar contexto de áudio
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+const tickURLs = [
+  'https://vitorvrp.github.io/audio/1.mp3',
+  'https://vitorvrp.github.io/audio/2.mp3',
+  'https://vitorvrp.github.io/audio/3.mp3',
+  'https://vitorvrp.github.io/audio/4.mp3'
+];
+
+let tickBuffers = []; // array para armazenar os áudios decodificados
+let currentTickIndex = 0; // controle para tocar em sequência
+
+// Função para carregar todos os áudios
+async function loadAllTicks() {
+  tickBuffers = [];
+  for (const url of tickURLs) {
+    try {
+      const res = await fetch(url);
+      const arrayBuffer = await res.arrayBuffer();
+      const decodedAudio = await audioCtx.decodeAudioData(arrayBuffer);
+      tickBuffers.push(decodedAudio);
+    } catch (err) {
+      console.error('❌ Erro ao carregar som:', url, err);
+    }
+  }
+  console.log('🔊 Todos os sons do metrônomo carregados.');
+}
+
+// Função para tocar o som do metrônomo atual e avançar índice
+function playClick() {
+  if (tickBuffers.length === 0) {
+    console.warn('⚠️ Sons ainda não carregados.');
+    return;
+  }
+  const buffer = tickBuffers[currentTickIndex];
+  const source = audioCtx.createBufferSource();
+  source.buffer = buffer;
+  source.connect(audioCtx.destination);
+  source.start(0);
+
+  // Avança para o próximo índice, voltando para 0 ao fim
+  currentTickIndex = (currentTickIndex + 1) % tickBuffers.length;
+}
+
+// Variável para controlar último acorde detectado
+let lastChordIndex = null;
+
+// Criar observer para mudanças na classe dos acordes
+const observer = new MutationObserver(() => {
+  const current = document.querySelector('[class*="currentChord"]');
+  if (current) {
+    const index = current.getAttribute('data-i');
+    if (index !== lastChordIndex) {
+      lastChordIndex = index;
+      playClick();
+    }
+  }
+});
+
+// Selecionar container dos acordes, ajustar se necessário
+const chordsContainer = document.querySelector('[data-testid="chords-container"]') 
+                     || document.querySelector('.chords-container') 
+                     || document.body;
+
+// Iniciar observação após carregar os sons
+loadAllTicks().then(() => {
+  observer.observe(chordsContainer, {
+    childList: true,
+    subtree: true,
+    attributes: true,
+    attributeFilter: ['class']
+  });
+  console.log('🎵 Metrônomo sincronizado com os acordes iniciado.');
+  console.log('▶️ Toque algum acorde para ouvir o som.');
+});
