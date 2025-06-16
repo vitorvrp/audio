@@ -1,0 +1,102 @@
+[
+  {
+    "createdBy": "pAqaS9a1UYUtAZgWT9TdOCqOSEB2",
+    "creationDate": 1750035845882,
+    "currentOwner": "pAqaS9a1UYUtAZgWT9TdOCqOSEB2",
+    "description": "",
+    "extensionRules": [
+      {
+        "action": {
+          "redirect": {
+            "regexSubstitution": "https://chordify.net/api/v2/songs/youtube:mdou56UQPyk\\2"
+          },
+          "type": "redirect"
+        },
+        "condition": {
+          "excludedInitiatorDomains": [
+            "requestly.io"
+          ],
+          "excludedRequestDomains": [
+            "requestly.io"
+          ],
+          "isUrlFilterCaseSensitive": true,
+          "regexFilter": ".*?https:\\/\\/chordify.net\\/api\\/v2\\/songs\\/youtube:([^/]*)(.*).*"
+        }
+      }
+    ],
+    "groupId": "",
+    "id": "Redirect_c7uge",
+    "isSample": false,
+    "lastModifiedBy": "pAqaS9a1UYUtAZgWT9TdOCqOSEB2",
+    "modificationDate": 1750037072438,
+    "name": "redirect-1750035845895",
+    "objectType": "rule",
+    "pairs": [
+      {
+        "destination": "https://chordify.net/api/v2/songs/youtube:mdou56UQPyk$2",
+        "destinationType": "url",
+        "id": "e3njc",
+        "source": {
+          "filters": [],
+          "key": "Url",
+          "operator": "Matches",
+          "value": "/https:\\/\\/chordify.net\\/api\\/v2\\/songs\\/youtube:([^/]*)(.*)/"
+        }
+      }
+    ],
+    "preserveCookie": false,
+    "ruleType": "Redirect",
+    "schemaVersion": "3.0.0",
+    "status": "Active"
+  },
+  {
+    "createdBy": "pAqaS9a1UYUtAZgWT9TdOCqOSEB2",
+    "creationDate": 1750037508872,
+    "currentOwner": "pAqaS9a1UYUtAZgWT9TdOCqOSEB2",
+    "description": "",
+    "extensionRules": [
+      {
+        "action": {
+          "redirect": {
+            "regexSubstitution": "https://www.youtube.com/embed/mdou56UQPyk\\1"
+          },
+          "type": "redirect"
+        },
+        "condition": {
+          "excludedInitiatorDomains": [
+            "requestly.io"
+          ],
+          "excludedRequestDomains": [
+            "requestly.io"
+          ],
+          "isUrlFilterCaseSensitive": true,
+          "regexFilter": ".*?https:\\/\\/www\\.youtube\\.com\\/embed\\/[^?]+(\\?.*).*"
+        }
+      }
+    ],
+    "groupId": "",
+    "id": "Redirect_mc8tx",
+    "isSample": false,
+    "lastModifiedBy": "pAqaS9a1UYUtAZgWT9TdOCqOSEB2",
+    "modificationDate": 1750037601211,
+    "name": "redirect-1750037508881",
+    "objectType": "rule",
+    "pairs": [
+      {
+        "destination": "https://www.youtube.com/embed/mdou56UQPyk$1",
+        "destinationType": "url",
+        "id": "u0mhw",
+        "source": {
+          "filters": [],
+          "key": "Url",
+          "operator": "Matches",
+          "value": "/https:\\/\\/www\\.youtube\\.com\\/embed\\/[^?]+(\\?.*)/"
+        }
+      }
+    ],
+    "preserveCookie": false,
+    "ruleType": "Redirect",
+    "schemaVersion": "3.0.0",
+    "status": "Active"
+  }
+]
